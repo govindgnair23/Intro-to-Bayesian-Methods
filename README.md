@@ -1,1 +1,1 @@
-A simple introduction to Bayesian Analysis. 
+A simple Introduction to Bayesian Analysis. 
