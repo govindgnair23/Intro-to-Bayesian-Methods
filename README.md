@@ -1,1 +1,1 @@
-A simple Introduction to Bayesian Analysis. 
+A simple Introduction to Bayesian Analysis. See report here [link](https://htmlpreview.github.io/?https://github.com/govindgnair23/Intro-to-Bayesian-Methods/blob/master/Intro_to_Bayesian_Methods.html)
