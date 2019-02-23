@@ -60,7 +60,7 @@ If you want to ask what the confidence interval can tell you *given the particul
 
 Consider some data we received from an experimenter who was measuring the bias of a coin. The data indicates that were 7 HEADS (z) out of a total of 24 tosses (N).
 
-###Frequentist Approach
+### Frequentist Approach
 
 Experimental design or setup is very important when using frequentist approaches.In other words the intent of the experimenter has an impact on the inferences we make. 
 
@@ -94,7 +94,7 @@ print(p_value)
 
 The sampling distribution is given below.
 
-```{r,message=FALSE, include=FALSE}
+```{r,message=FALSE}
 library(ggplot2)
 
 z <- c(0:24)
@@ -129,7 +129,7 @@ print(p_value)
 
 The sampling distribution is given below.
 
-```{r ,message=FALSE, include=FALSE}
+```{r ,message=FALSE}
 library(ggplot2)
 
 N <- c(0:50) # Number of possible tails observed before 7th head is observed
@@ -155,7 +155,7 @@ The likelihood function in this approach is the Binomial  likelihood function, j
 
 In the Bayesian approach, we also need to choose a prior which encodes our prior belief about the fairness of the coin. To make the analysis easier the prior can be a Beta distribution which is conjugate of the binomial likelihood function.
 
-One possible Beta prior is Beta(1,1) which indicates a weak prior belief in the fairness of the coin. This encodes a distribution as shown below:
+One possible Beta prior is Beta(2,2) which indicates a weak prior belief in the fairness of the coin. This encodes a distribution as shown below:
 
 ```{r}
 set.seed(0)
@@ -428,7 +428,7 @@ $$ \sigma \sim Uniform(sd(Y)/1000,1000sd(Y))$$
 
 Specify data for shipment to Stan
 
-```{r,message=FALSE,include=FALSE}
+```{r,message=FALSE}
 library(rstan)
 dataList <- list(
   x <- mtcars$disp,
@@ -589,7 +589,9 @@ hist(preds[,2],main = 'Prediction for disp =324',col='blue',xlab='mpg')
 
 4. Getting started with rstanarm [link](https://cran.r-project.org/web/packages/rstanarm/vignettes/rstanarm.html)
 
-5. Books
+5. R Stan Case Studies [link](https://mc-stan.org/users/documentation/case-studies)
+
+6. Books
    i) Doing Bayesian Data Analysis: A Tutorial with R, JAGS and STAN [link](https://www.amazon.com/Doing-Bayesian-Data-Analysis-Tutorial/dp/0123814855)
    
   ii) Statistical Rethinking [link](https://www.amazon.com/Statistical-Rethinking-Bayesian-Examples-Chapman/dp/1482253445/ref=pd_lpo_sbs_14_t_2?_encoding=UTF8&psc=1&refRID=NGXMGE8HJARE7YGFRPJ6)
