@@ -1,0 +1,70 @@
+---
+title: "Introduction to Gaussian Processes"
+author: "Govind G Nair"
+date: "7/29/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Gaussian Distributions
+
+Fundamental to understanding Gaussian process in a Gaussian distribution, the 1 dimensional version of which is the Normal distribution or the Bell Curve.
+
+The plot of a standard normal distribution with mean 0 and variance 1 is shown below. Note that the curve doesn't look like a perfect bell as the data has been simulated
+```{r cars}
+set.seed(0)
+plot(density(rnorm(100000)),main = bquote("N("~mu~"=0,"~sigma^2~"=1)"))
+```
+
+
+A bivariate gaussian distribution is simply a Guassian distribution in 2 dimensions. Whereas a univariate Gaussian distribution is parameterized by two scalar quantites (i.e. the mean and variance),the bivariate Gaussian distribution and its higher dimensional counterparts are parameterised by a vector( the mean) and a matrix (the covariance matrix)
+
+$$\begin{bmatrix} x_1\\x_2 \end{bmatrix} = N\Big( \begin{bmatrix} \mu_1\\\mu_2 \end{bmatrix},\begin{bmatrix} \Sigma_{11} & \Sigma_{12}\\\Sigma_{21} & \Sigma_{22} \end{bmatrix} \Big)$$
+
+A bivariate gaussian can be represented using a simple scatter plot as shown below.
+
+```{r}
+library(ggplot2)
+df = data.frame(x= rnorm(10000),y =rnorm(10000))
+ggplot(df,aes(x=x,y=y)) + geom_point()+geom_density_2d()
+```
+
+Note that the bivaraiate gaussian above is constructed using two independant gaussians, meaning the two variables being plotted here are independant i.e. information about one doesn't tell us anything about the other. This is further evidenced by the circular, symmetrical distribution of the points.
+
+Such a standard normal bi-variate gaussian has mean $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & 0\\0 & 1 \end{bmatrix}$
+
+Note the off-diagonal elements of the covariance matrix are 0.
+
+The plot below shows a bivariate gaussian with $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & 0.7\\0.7 & 1 \end{bmatrix}$
+
+```{r}
+
+gaussian_2d <- data.frame(rmvnorm(10000,mean= c(0,0),sigma = matrix(c(1,0.7,0.7,1),ncol=2)))
+ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() + labs(x='x',y='y')
+
+```
+
+Here the two random variables are positively correlated.
+
+Similarly,the plot below shows a bivariate gaussian with $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & -0.7\\-0.7 & 1 \end{bmatrix}$
+
+```{r}
+gaussian_2d <- data.frame(rmvnorm(10000,mean= c(0,0),sigma = matrix(c(1,-0.7,-0.7,1),ncol=2)))
+ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() + labs(x='x',y='y')
+```
+
+Here the two variables are negatively correlated.
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
