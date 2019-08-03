@@ -29,37 +29,128 @@ A bivariate gaussian can be represented using a simple scatter plot as shown bel
 ```{r}
 library(ggplot2)
 df = data.frame(x= rnorm(10000),y =rnorm(10000))
-ggplot(df,aes(x=x,y=y)) + geom_point()+geom_density_2d()
+ggplot(df,aes(x=x,y=y)) + geom_point()+geom_density_2d()+labs(x='x1',y='x2')
 ```
 
-Note that the bivaraiate gaussian above is constructed using two independant gaussians, meaning the two variables being plotted here are independant i.e. information about one doesn't tell us anything about the other. This is further evidenced by the circular, symmetrical distribution of the points.
+Note that the bivaraiate gaussian above is constructed using two independant 1D gaussians, meaning the two variables being plotted here are independant i.e. information about one doesn't tell us anything about the other. This is further evidenced by the circular, symmetrical distribution of the points.
 
 Such a standard normal bi-variate gaussian has mean $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & 0\\0 & 1 \end{bmatrix}$
 
 Note the off-diagonal elements of the covariance matrix are 0.
 
-The plot below shows a bivariate gaussian with $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & 0.7\\0.7 & 1 \end{bmatrix}$
+The plot below shows a bivariate gaussian with $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & 0.7\\0.7 & 1 \end{bmatrix}$. 
 
 ```{r}
 
 gaussian_2d <- data.frame(rmvnorm(10000,mean= c(0,0),sigma = matrix(c(1,0.7,0.7,1),ncol=2)))
-ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() + labs(x='x',y='y')
+ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() 
 
 ```
 
-Here the two random variables are positively correlated.
+Here the two random variables are positively correlated and  are not independant,because if one is positive, we know that the second is also far more likely to be positive rather than negative
 
 Similarly,the plot below shows a bivariate gaussian with $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & -0.7\\-0.7 & 1 \end{bmatrix}$
 
-```{r}
+```{r , warning=FALSE, message=FALSE}
+library(mvtnorm)
 gaussian_2d <- data.frame(rmvnorm(10000,mean= c(0,0),sigma = matrix(c(1,-0.7,-0.7,1),ncol=2)))
-ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() + labs(x='x',y='y')
+ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() 
 ```
 
 Here the two variables are negatively correlated.
 
+Now consider a different visualization of the same data in the figure above.Only 10 of the 10,000
+points plotted above is visualized here.
 
-## Including Plots
+```{r}
+library(gganimate)
+library(tidyr)
+library(dplyr)
+
+#Select top 10 rows for visualization
+viz_data <- head(gaussian_2d,10)
+viz_data$set <- as.integer(c(1:10))
+#Convert to long format
+viz_data_long <- gather(viz_data,key='datapoint',value='y',-set) %>% arrange(set) %>% 
+                    select(-datapoint) %>% 
+                      mutate(x = rep(c(1,2),length(unique(viz_data_long$set)))) %>%
+                        select(set,x,y)
+
+
+ggplot(viz_data_long,aes(x=x,y=y,group=set)) + geom_point() + geom_line(col='cornflowerblue')+
+  transition_time(set)
+
+
+```
+
+The 2D gaussian distribution can be used to model a line between two given points. A gaussian distribution
+qith N dimesnions can be used to model a line through N different points as shown below.
+
+A 10 D gaussian with a covariance matrix shown below can be constructed.
+
+
+```{r}
+N  <- 10 # dimension of required cov matrix
+cov_mat <- diag(N)
+
+vec <- seq(1,0.1,by = -1/N)[2:N]
+
+for(i in 1:(N-1)){
+  cov_mat[i,(i+1):N] <- cov_mat[(i+1):N,i] <- vec[1:(N-i)]
+}
+
+print(cov_mat)
+```
+
+```{r}
+gaussian_10d <- data.frame(rmvnorm(10,mean= rep(0,10),sigma = cov_mat))
+viz_data <- gaussian_10d
+viz_data$set <- as.integer(c(1:10))
+#Convert to long format
+viz_data_long <- gather(viz_data,key='datapoint',value='y',-set) %>% arrange(set) %>% 
+                    select(-datapoint) %>% 
+                      mutate(x = rep(c(1:10),length(unique(viz_data_long$set)))) %>%
+                        select(set,x,y)
+
+
+ggplot(viz_data_long,aes(x=x,y=y,group=set)) + geom_point() + geom_line(col='cornflowerblue')+
+  transition_time(set)
+
+```
+
+
+This should give you the intuition that using an N - dimensional gaussian can be used to model a line through N number of points and an infinite dimensional gaussian can model a continious curve. This leads to the idea for gaussian process regression.
+
+
+
+##Marginal Distributions and Conditional Distributions
+
+
+Given a jointly Gaussian distribution
+
+$$\begin{bmatrix} x_1\\x_2 \end{bmatrix} = N\Big( \begin{bmatrix} \mu_1\\\mu_2 \end{bmatrix},\begin{bmatrix} \Sigma_{11} & \Sigma_{12}\\\Sigma_{21} & \Sigma_{22} \end{bmatrix} \Big)$$
+
+according to the Multivariate Gaussian Theorem, the marginal distributions of the two component variables are given by.
+
+$$ p(x_1) = N (x_1 | \mu_1.\Sigma_{12}) $$
+
+$$ p(x_2) = N (x_2 | \mu_2.\Sigma_{22}) $$
+
+The conditional distribution is given by:
+
+$$ p(x_1|x_2) = N (x_1 | \mu_{1|2},\Sigma_{1|2}) $$
+where:
+
+$$ \mu_{1|2} = \mu_1 + \Sigma_{12}\Sigma_{12}^{-1} (x_2 - x_1) $$
+
+and
+
+$$ \Sigma_{1|2} = \Sigma_{11} - \Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21} $$
+
+
+
+
+##
 
 You can also embed plots, for example:
 
