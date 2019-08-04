@@ -99,6 +99,7 @@ for(i in 1:(N-1)){
   cov_mat[i,(i+1):N] <- cov_mat[(i+1):N,i] <- vec[1:(N-i)]
 }
 
+rownames(cov_mat) <- colnames(cov_mat)<- paste0('X',c(1:10))
 print(cov_mat)
 ```
 
@@ -120,6 +121,10 @@ ggplot(viz_data_long,aes(x=x,y=y,group=set)) + geom_point() + geom_line(col='cor
 
 
 This should give you the intuition that using an N - dimensional gaussian can be used to model a line through N number of points and an infinite dimensional gaussian can model a continious curve. This leads to the idea for gaussian process regression.
+
+Also compare the covariance between any two points  in the covaraince matrix above and how it manifests in the graph. X1 and X2 have a high covariance, hence the points at 1 and 2 on the x-axis are close to each other along the y-axis. X1 and X10 on the other hand have a low covariance,hence the points 1 and 10 on the x-axis can vary widely. 
+
+Conversely if two points lie close to each other on the y-axis, they are likely to have a high covariance whereas if 2 points lie far apart from each other on the y-axis, they are likely to have a low covariance.
 
 
 
@@ -147,15 +152,86 @@ and
 
 $$ \Sigma_{1|2} = \Sigma_{11} - \Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21} $$
 
+These expression are critical to do inference with Gaussian Process Regression.
 
 
+## Modelling data using Gaussian Distributions.
 
-##
+Consider three points shown below which you want to model using a Gaussian distribution.
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+
+plot(data.frame(x = c(1,1.5,3) , f = c(0.2,0.25,0.8)),xlim=c(0,5),ylim = c(0,1),pch=16)
+text(x=c(1,1.5,3),y = c(0.25,0.3,0.85),labels=c('(x1,f1)','(x2,f2)','(x3,f3)'))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+The three points above can be modelled using a Gaussian disttibution of the form below. Note that a zero vector can be used for the mean after standardazing the data.
+
+$$\begin{bmatrix} x_1\\x_2\\x_3 \end{bmatrix} = N\Bigg( \begin{bmatrix} 0\\0\\0 \end{bmatrix},\begin{bmatrix} K_{11} & K_{12} & K_{13}\\K_{21} & K_{22} & K_{23}\\K_{31} & K_{32} & K_{33} \end{bmatrix} \Bigg)$$
+
+
+
+To model these data points using a Gausssian distribution , we need to construct a covaraince matrix such that the terms $K_{ij}$ captures the similarity or coavraince between points i and j.
+
+The similarity betwewn two points can be captured using kernel functions.Consider a squared exponential kernel that captures the similarity between two points $X_i$ and $X_j$
+
+$$K_{ij} =  e^{ -\sigma || X_i - X_j ||^2}$$ 
+
+
+
+$$
+K_{ij} = \begin{cases} 
+                     0, \text{if}\ ||X_i -X_j|| \to \infty \\
+                     1, \text{if}\ X_i = X_j
+          \end{cases}
+          
+$$
+
+
+The covariance matrix for the three points can be calculated as shown below
+
+```{r}
+library(kernlab)
+rbfkernel <- rbfdot(sigma = 0.1) # Set value of hyperparameter
+point1 <- c(1,0.2)
+point2 <- c(1.5,0.25)
+point3 <- c(3,0.8)
+
+K12 <- K21 <- rbfkernel(point1,point2)
+K23 <- K32 <- rbfkernel(point2,point3)
+K13 <- K31 <-rbfkernel(point1,point3)
+K11 <- rbfkernel(point1,point1)
+K22 <- rbfkernel(point2,point2)
+K33 <- rbfkernel(point3,point3)
+
+
+matrix(c(K11,K12,K13,K21,K22,K23,K31,K32,K33),byrow=TRUE,nr=3)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
