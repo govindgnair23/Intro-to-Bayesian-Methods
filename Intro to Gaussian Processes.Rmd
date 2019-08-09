@@ -135,7 +135,7 @@ Given a jointly Gaussian distribution
 
 $$\begin{bmatrix} x_1\\x_2 \end{bmatrix} = N\Big( \begin{bmatrix} \mu_1\\\mu_2 \end{bmatrix},\begin{bmatrix} \Sigma_{11} & \Sigma_{12}\\\Sigma_{21} & \Sigma_{22} \end{bmatrix} \Big)$$
 
-according to the Multivariate Gaussian Theorem, the marginal distributions of the two component variables are given by.
+according to the **Multivariate Gaussian Theorem**, the marginal distributions of the two component variables are given by.
 
 $$ p(x_1) = N (x_1 | \mu_1.\Sigma_{12}) $$
 
@@ -143,14 +143,14 @@ $$ p(x_2) = N (x_2 | \mu_2.\Sigma_{22}) $$
 
 The conditional distribution is given by:
 
-$$ p(x_1|x_2) = N (x_1 | \mu_{1|2},\Sigma_{1|2}) $$
+$$ p(x_2|x_1) = N (x_2 | \mu_{2|1},\Sigma_{2|1}) $$
 where:
 
-$$ \mu_{1|2} = \mu_1 + \Sigma_{12}\Sigma_{12}^{-1} (x_2 - x_1) $$
+$$ \mu_{2|1} = \mu_2 + \Sigma_{21}\Sigma_{11}^{-1} (x_1 - \mu_1) $$
 
 and
 
-$$ \Sigma_{1|2} = \Sigma_{11} - \Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21} $$
+$$ \Sigma_{2|1} = \Sigma_{22} - \Sigma_{21}\Sigma_{11}^{-1}\Sigma_{12} $$
 
 These expression are critical to do inference with Gaussian Process Regression.
 
@@ -166,9 +166,9 @@ plot(data.frame(x = c(1,1.5,3) , f = c(0.2,0.25,0.8)),xlim=c(0,5),ylim = c(0,1),
 text(x=c(1,1.5,3),y = c(0.25,0.3,0.85),labels=c('(x1,f1)','(x2,f2)','(x3,f3)'))
 ```
 
-The three points above can be modelled using a Gaussian disttibution of the form below. Note that a zero vector can be used for the mean after standardazing the data.
+The three points above can be modelled using a Gaussian distribution of the form below. Note that a zero vector can be used for the mean after standardazing the data.
 
-$$\begin{bmatrix} x_1\\x_2\\x_3 \end{bmatrix} = N\Bigg( \begin{bmatrix} 0\\0\\0 \end{bmatrix},\begin{bmatrix} K_{11} & K_{12} & K_{13}\\K_{21} & K_{22} & K_{23}\\K_{31} & K_{32} & K_{33} \end{bmatrix} \Bigg)$$
+$$\begin{bmatrix} f_1\\f_2\\f_3 \end{bmatrix} = N\Bigg( \begin{bmatrix} 0\\0\\0 \end{bmatrix},\begin{bmatrix} K_{11} & K_{12} & K_{13}\\K_{21} & K_{22} & K_{23}\\K_{31} & K_{32} & K_{33} \end{bmatrix} \Bigg) = N(\textbf{0},\textbf{K})$$
 
 
 
@@ -194,9 +194,9 @@ The covariance matrix for the three points can be calculated as shown below
 ```{r}
 library(kernlab)
 rbfkernel <- rbfdot(sigma = 0.1) # Set value of hyperparameter
-point1 <- c(1,0.2)
-point2 <- c(1.5,0.25)
-point3 <- c(3,0.8)
+point1 <- c(1)
+point2 <- c(1.5)
+point3 <- c(3)
 
 K12 <- K21 <- rbfkernel(point1,point2)
 K23 <- K32 <- rbfkernel(point2,point3)
@@ -206,22 +206,134 @@ K22 <- rbfkernel(point2,point2)
 K33 <- rbfkernel(point3,point3)
 
 
-matrix(c(K11,K12,K13,K21,K22,K23,K31,K32,K33),byrow=TRUE,nr=3)
+K <- matrix(c(K11,K12,K13,K21,K22,K23,K31,K32,K33),byrow=TRUE,nr=3)
+print(K)
 
 ```
 
 
+Now that we have learned a model to fit the three points, we want to predict the value of a fourth point $x^*$, the predicted value for this point $f^*$ can lie anywhere along the red vertical lines.
+
+```{r}
+plot(data.frame(x = c(1,1.5,3) , f = c(0.2,0.25,0.8)),xlim=c(0,5),ylim = c(0,1),pch=16)
+abline(v= 2.5,col='red')
+text(x=c(1,1.5,3,2.15),y = c(0.25,0.3,0.85,0.5),labels=c('(x1,f1)','(x2,f2)','(x3,f3)','(x*=2.5,f*)'))
+```
+
+In order to capture the relationship between the four points, the four points  can be modelled as a 4D Gaussian defined as follows:
+
+$$\begin{bmatrix} \textbf{f}\\f^* \end{bmatrix} = N\Bigg( \begin{bmatrix} \textbf{0}\\0 \end{bmatrix},\begin{bmatrix} \textbf{K} & \textbf{K}_*\\\textbf{K}_*^T & K_{**} \end{bmatrix} \Bigg) $$
+
+where:
+
+$ \textbf{f} = \begin{bmatrix} f_1\\f_2\\f_3 \end{bmatrix}$,$ \textbf{0} = \begin{bmatrix} 0\\0\\0 \end{bmatrix}$, $ \textbf{K} =\begin{bmatrix} K_{11} & K_{12} & K_{13}\\K_{21} & K_{22} & K_{23}\\K_{31} & K_{32} & K_{33} \end{bmatrix}$ and $\textbf{K}_* = \begin{bmatrix} K_{1*}\\K_{2*}\\K_{3*} \end{bmatrix}$
 
 
+This is a joint distribution over $\textbf{f}$ and $f^*$. Given $\textbf{f}$ which we already know from the three available datapoints, we can use the **Multivariate Gaussian Theorem** to estimate the distribution over $f_*$. The mean and variance of this distribution is goven by:
+
+$$ \mu^* = \textbf{K}_*^{T}\textbf{K}^{-1}f$$
+
+ $$ \sigma^* = K_{**} - \textbf{K}_*^{T} \textbf{K}^{-1} \textbf{K}_* $$
+ 
+We can get  mean and variance of the distribution over the unknown value at x = 2.5 as follows
+
+```{r}
+
+f <- c(0.2,0.25,0.8)
+
+point_star <- c(2.5)
+
+K1star <- Kstar1 <- rbfkernel(point1,point_star)
+K2star <- Kstar2 <- rbfkernel(point2,point_star)
+K3star <- Kstar3 <-rbfkernel(point3,point_star)
+Kstarstar <- rbfkernel(point_star,point_star)
+
+Kstar = c(K1star,K2star,K3star)
+Kstar_t = t(Kstar)
+K_inv = solve(K)
+
+##The mean##
+mu_star = Kstar_t%*%K_inv%*%f
+
+##The  standard deviation##
+sigma_star = sqrt(Kstarstar - Kstar_t%*%K_inv%*%Kstar)
+
+print(paste0('Mean of f* = ',mu_star))
+print(paste0('Standard deviation of f* = ',sigma_star))
+
+```
+
+The prediction is shown below in green using an error bar.
+
+```{r}
+plot(data.frame(x = c(1,1.5,3,point_star) , f = c(0.2,0.25,0.8,mu_star)),xlim=c(0,5),ylim = c(0,1),pch=16, col = c(rep('black',3),'green'))
+arrows(point_star,mu_star - 1.96*sigma_star,point_star,mu_star + 1.96*sigma_star,length = 0.05,angle=90,
+       code=3,col='green')
 
 
+```
 
 
+Similarly the prediction of any point along the x-axis can be found. Below the predictions for a sequence of points along the x-axis have been generated and plotted along with the their 95% confidence intervals.
 
 
+```{r}
+
+predict <- function(input){
+  
+  point_star <- input
+
+  K1star <- Kstar1 <- rbfkernel(point1,point_star)
+  K2star <- Kstar2 <- rbfkernel(point2,point_star)
+  K3star <- Kstar3 <-rbfkernel(point3,point_star)
+  Kstarstar <- rbfkernel(point_star,point_star)
+
+  Kstar = c(K1star,K2star,K3star)
+  Kstar_t = t(Kstar)
+  K_inv = solve(K)
+
+  ##The mean##
+  mu_star = Kstar_t%*%K_inv%*%f
+
+  ##The standard deviation##
+  sigma_star = tryCatch(sqrt(Kstarstar - Kstar_t%*%K_inv%*%Kstar),
+                        warning = function(e){0})
+  
+  return(c(mu_star,sigma_star))
+}
+
+##Vector of points to generate predictions on
+x <- seq(0,5,by=0.1)
+
+predictions <- sapply(x,predict)
+mean <- predictions[1,]
+#lower bound
+lb <- predictions[1,] - 1.96*predictions[2,]
+#upper bound
+ub <-predictions[1,] + 1.96*predictions[2,]
+#Bind together in a dataframe
+preds <- data.frame(cbind(x,mean,lb,ub))
+#Inputs
+inputs <-  data.frame(x=c(point1,point2,point3),f=f)
 
 
+ggplot(preds,aes(x=x,y=mean)) + 
+  geom_ribbon(aes(x=x,ymin=lb,ymax=ub),fill='grey70')+
+  geom_line(col='green')+
+  geom_point(data=inputs,mapping=aes(x=x,y=f))+labs(y='y')
+  
 
+```
+
+
+We can clearly see that the uncertainity near the training data points is low, as we move away from the training data points, the level of uncertainity increases. This aligns very well with our intuition.
+
+
+## Gaussian Processes
+
+The Guassian process is thus the generalization of a multi-variate normal distribution to infinitely many variables. It is a collection of random variables, any finite number of which will have consistent Gaussian distributions.
+
+A Gaussian process is fully specified by a mean function $m(x)$ and a covariance function $K(x,x')$, it is a gaussian distribution over functions.
 
 
 
