@@ -11,10 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Gaussian Distributions
 
-Fundamental to understanding a Gaussian process is a Gaussian distribution, the 1 dimensional version of which is the Normal distribution or the Bell Curve.
+Fundamental to understanding a Gaussian process is a Gaussian distribution.The 1 dimensional version of the Gaussian distribution is the Normal distribution or the Bell Curve.
 
 The plot of a standard normal distribution with mean 0 and variance 1 is shown below. Note that the curve doesn't look like a perfect bell as the data has been simulated
-```{r cars}
+```{r }
 set.seed(0)
 plot(density(rnorm(100000)),main = bquote("N("~mu~"=0,"~sigma^2~"=1)"))
 ```
@@ -40,7 +40,7 @@ Note the off-diagonal elements of the covariance matrix are 0.
 
 The plot below shows a bi-variate Gaussian with $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & 0.7\\0.7 & 1 \end{bmatrix}$. 
 
-```{r}
+```{r ,warning=FALSE,message=FALSE}
 library(mvtnorm)
 gaussian_2d <- data.frame(rmvnorm(10000,mean= c(0,0),sigma = matrix(c(1,0.7,0.7,1),ncol=2)))
 ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() 
@@ -52,7 +52,6 @@ Here the two random variables are positively correlated and  are not independent
 Similarly,the plot below shows a bi-variate Gaussian with $\mu = \begin{bmatrix} 0\\0 \end{bmatrix}$ and a covariance matrix $\begin{bmatrix} 1 & -0.7\\-0.7 & 1 \end{bmatrix}$
 
 ```{r , warning=FALSE, message=FALSE}
-library(mvtnorm)
 gaussian_2d <- data.frame(rmvnorm(10000,mean= c(0,0),sigma = matrix(c(1,-0.7,-0.7,1),ncol=2)))
 ggplot(gaussian_2d,aes(x=X1,y=X2)) + geom_point()+geom_density_2d() 
 ```
@@ -62,7 +61,7 @@ Here the two variables are negatively correlated.
 Now consider a different visualization of the same data in the figure above.Only 10 of the 10,000
 points plotted above is visualized here.
 
-```{r}
+```{r ,warning=FALSE,message=FALSE}
 library(gganimate)
 library(tidyr)
 library(dplyr)
@@ -122,6 +121,8 @@ viz_data_long <- gather(viz_data,key='datapoint',value='y',-set) %>% arrange(set
 
 
 ```
+The plot below shows a gaussian distribution in 10 dimensions, which can potentially be used to model a line passing through 10  points.
+
 ```{r }
 ggplot(viz_data_long,aes(x=x,y=y,group=set)) + geom_point() + 
   geom_line(col='cornflowerblue')+ transition_time(set)
@@ -136,7 +137,7 @@ Conversely if two points lie close to each other on the y-axis, they are likely 
 
 
 
-##Marginal Distributions and Conditional Distributions
+## Marginal Distributions and Conditional Distributions
 
 
 Given a jointly Gaussian distribution
@@ -194,18 +195,15 @@ $$K_{ij} =  e^{ -\sigma || X_i - X_j ||^2}$$
 
 
 
-$$
-K_{ij} = \begin{cases} 
+$$K_{ij} = \begin{cases} 
                      0, \text{if}\ ||X_i -X_j|| \to \infty \\
                      1, \text{if}\ X_i = X_j
-          \end{cases}
-          
-$$
+          \end{cases}$$
 
 
 The covariance matrix for the three points can be calculated as shown below
 
-```{r}
+```{r ,message=FALSE, warning=FALSE}
 library(kernlab)
 rbfkernel <- rbfdot(sigma = 0.1) # Set value of hyperparameter
 point1 <- c(1)
@@ -240,7 +238,10 @@ $$\begin{bmatrix} \textbf{f}\\f^* \end{bmatrix} = N\Bigg( \begin{bmatrix} \textb
 
 where:
 
-$ \textbf{f} = \begin{bmatrix} f_1\\f_2\\f_3 \end{bmatrix}$,$ \textbf{0} = \begin{bmatrix} 0\\0\\0 \end{bmatrix}$, $ \textbf{K} =\begin{bmatrix} K_{11} & K_{12} & K_{13}\\K_{21} & K_{22} & K_{23}\\K_{31} & K_{32} & K_{33} \end{bmatrix}$ and $\textbf{K}_* = \begin{bmatrix} K_{1*}\\K_{2*}\\K_{3*} \end{bmatrix}$
+$$ \textbf{f} = \begin{bmatrix} f_1\\f_2\\f_3 \end{bmatrix}$$
+$$ \textbf{0} = \begin{bmatrix} 0\\0\\0 \end{bmatrix}$$
+$$ \textbf{K} =\begin{bmatrix} K_{11} & K_{12} & K_{13}\\K_{21} & K_{22} & K_{23}\\K_{31} & K_{32} & K_{33} \end{bmatrix}$$ 
+$$\textbf{K}_* = \begin{bmatrix} K_{1*}\\K_{2*}\\K_{3*} \end{bmatrix}$$
 
 
 This is a joint distribution over $\textbf{f}$ and $f^*$. Given $\textbf{f}$ which we already know from the three available data points, we can use the **Multivariate Gaussian Theorem** to estimate the distribution over $f_*$. The mean and variance of this distribution is given by:
@@ -432,7 +433,7 @@ Gaussian Process are very computationally intensive and it's application to larg
 
 5. A high quality intro to GPs from [distill.pub](https://distill.pub/2019/visual-exploration-gaussian-processes/)
 
-
+6. Largely the same content in [python](http://katbailey.github.io/post/gaussian-processes-for-dummies/)
 
 
 
